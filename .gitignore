@@ -1,0 +1,14 @@
+# Environment files and secrets
+.env*
+!.env.example
+
+# Vault initialization output and JumpServer token
+vault-init.json
+vault-jms-token.txt
+
+# Exported Docker images and image archives
+*.tar
+*.tar.gz
+*.tgz
+*.oci
+jumpserver-lab-images*

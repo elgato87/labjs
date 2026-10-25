@@ -1,0 +1,950 @@
+name: demo
+services:
+  celery:
+    command:
+      - start
+      - task
+    container_name: jms_celery
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      postgresql:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/core:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    privileged: true
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: core-data
+        target: /opt/jumpserver/data
+        volume: {}
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\certs
+        target: /opt/jumpserver/data/certs
+        read_only: true
+        bind:
+          create_host_path: true
+  chen:
+    container_name: jms_chen
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/chen:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\certs
+        target: /opt/chen/data/certs
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: chen-data
+        target: /opt/chen/data
+        volume: {}
+  core:
+    command:
+      - start
+      - web
+    container_name: jms_core
+    depends_on:
+      postgresql:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+      vault1:
+        condition: service_started
+        required: true
+      vault2:
+        condition: service_started
+        required: true
+      vault3:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/core:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    privileged: true
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: core-data
+        target: /opt/jumpserver/data
+        volume: {}
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\certs
+        target: /opt/jumpserver/data/certs
+        read_only: true
+        bind:
+          create_host_path: true
+  koko:
+    container_name: jms_koko
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/koko:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 2222
+        published: "2222"
+        protocol: tcp
+    privileged: true
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\certs
+        target: /opt/koko/data/certs
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: koko-data
+        target: /opt/koko/data
+        volume: {}
+  lion:
+    container_name: jms_lion
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/lion:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\certs
+        target: /opt/lion/data/certs
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: lion-data
+        target: /opt/lion/data
+        volume: {}
+  nginx:
+    container_name: jms_lb
+    depends_on:
+      web1:
+        condition: service_started
+        required: true
+      web2:
+        condition: service_started
+        required: true
+    image: nginx:1.27-alpine
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 80
+        published: "80"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\nginx\ee-nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: true
+  panda:
+    container_name: jms_panda
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/panda:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: panda-data
+        target: /opt/panda/data
+        volume: {}
+  postgresql:
+    container_name: jms_postgresql
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      POSTGRES_DB: jumpserver
+      POSTGRES_PASSWORD: 345381f086fe4a6fcf65cccc
+      POSTGRES_USER: jumpserver
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      timeout: 5s
+      interval: 10s
+      retries: 20
+    image: postgres:16.10-bookworm
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: pgdata
+        target: /var/lib/postgresql/data
+        volume: {}
+  razor:
+    container_name: jms_razor
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/razor:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 3389
+        published: "3389"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\nginx\cert
+        target: /opt/razor/cert
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: razor-data
+        target: /opt/razor/data
+        volume: {}
+  redis:
+    command:
+      - redis-server
+      - /etc/redis.conf
+      - --requirepass
+      - $${REDIS_PASSWORD}
+    container_name: jms_redis
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - -a
+        - $${REDIS_PASSWORD}
+        - ping
+      timeout: 5s
+      interval: 10s
+      retries: 20
+    image: redis:7.4.6-bookworm
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: redisdata
+        target: /data
+        volume: {}
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\redis\redis.conf
+        target: /etc/redis.conf
+        read_only: true
+        bind:
+          create_host_path: true
+  vault1:
+    cap_add:
+      - IPC_LOCK
+    command:
+      - vault
+      - server
+      - -config=/vault/config/vault.hcl
+    container_name: vault1
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    image: hashicorp/vault:1.17
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 8200
+        published: "8200"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\vault\vault1.hcl
+        target: /vault/config/vault.hcl
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: vault1-data
+        target: /vault/data
+        volume: {}
+  vault2:
+    cap_add:
+      - IPC_LOCK
+    command:
+      - vault
+      - server
+      - -config=/vault/config/vault.hcl
+    container_name: vault2
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    image: hashicorp/vault:1.17
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 8200
+        published: "8210"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\vault\vault2.hcl
+        target: /vault/config/vault.hcl
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: vault2-data
+        target: /vault/data
+        volume: {}
+  vault3:
+    cap_add:
+      - IPC_LOCK
+    command:
+      - vault
+      - server
+      - -config=/vault/config/vault.hcl
+    container_name: vault3
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    image: hashicorp/vault:1.17
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 8200
+        published: "8220"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\vault\vault3.hcl
+        target: /vault/config/vault.hcl
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: vault3-data
+        target: /vault/data
+        volume: {}
+  video:
+    cpus: 2
+    container_name: jms_video
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/video-worker:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: video-data
+        target: /opt/video-worker/data
+        volume: {}
+  web1:
+    container_name: jms_web1
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      postgresql:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      GZIP: "on"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_LB: "1"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/web:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: core-data
+        target: /opt/jumpserver/data
+        volume: {}
+      - type: volume
+        source: web1-logs
+        target: /var/log/nginx
+        volume: {}
+      - type: bind
+        source: /sys/fs/bpf
+        target: /sys/fs/bpf
+        bind:
+          create_host_path: true
+  web2:
+    container_name: jms_web2
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      postgresql:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      GZIP: "on"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_LB: "1"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/web:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: core-data
+        target: /opt/jumpserver/data
+        volume: {}
+      - type: volume
+        source: web2-logs
+        target: /var/log/nginx
+        volume: {}
+      - type: bind
+        source: /sys/fs/bpf
+        target: /sys/fs/bpf
+        bind:
+          create_host_path: true
+  xrdp:
+    container_name: jms_xrdp
+    depends_on:
+      core:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      BOOTSTRAP_TOKEN: change-me-bootstrap-token
+      CHEN_ENABLED: "1"
+      CLIENT_MAX_BODY_SIZE: 4096m
+      CORE_HOST: http://core:8080
+      DB_ENGINE: postgresql
+      DB_HOST: postgresql
+      DB_NAME: jumpserver
+      DB_PASSWORD: change-me-db-password
+      DB_PORT: "5432"
+      DB_USER: jumpserver
+      FACELIVE_ENABLED: "1"
+      HTTP_PORT: "80"
+      KOKO_ENABLED: "1"
+      LION_ENABLED: "1"
+      PANDA_ENABLED: "1"
+      RAZOR_ENABLED: "1"
+      RDP_PORT: "3389"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: change-me-redis-password
+      REDIS_PORT: "6379"
+      SECRET_KEY: change-me-secret-key
+      SSH_PORT: "2222"
+      TZ: Asia/Shanghai
+      USE_IPV6: "0"
+      USE_XPACK: "1"
+      VAULT_BACKEND: hcp
+      VAULT_ENABLED: "true"
+      VAULT_HCP_HOST: http://vault1:8200
+      VAULT_HCP_MOUNT_POINT: jumpserver
+      VAULT_HCP_TOKEN: change-me-vault-token
+      XRDP_PORT: "3390"
+    image: jumpserver/xrdp:v4.10.17-ee
+    networks:
+      jumpserver-net: null
+    ports:
+      - mode: ingress
+        target: 3390
+        published: "3390"
+        protocol: tcp
+    pull_policy: never
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: xrdp-data
+        target: /opt/xrdp/data
+        volume: {}
+      - type: bind
+        source: C:\Google Drive\NOVA IT\PCI JumpServer\Demo\jumpserver-ee-v4.10.17-x86_64\config_init\nginx\cert
+        target: /opt/xrdp/cert
+        read_only: true
+        bind:
+          create_host_path: true
+networks:
+  jumpserver-net:
+    name: demo_jumpserver-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.250.0/24
+volumes:
+  chen-data:
+    name: demo_chen-data
+  core-data:
+    name: demo_core-data
+  koko-data:
+    name: demo_koko-data
+  lion-data:
+    name: demo_lion-data
+  panda-data:
+    name: demo_panda-data
+  pgdata:
+    name: demo_pgdata
+  razor-data:
+    name: demo_razor-data
+  redisdata:
+    name: demo_redisdata
+  vault1-data:
+    name: demo_vault1-data
+  vault2-data:
+    name: demo_vault2-data
+  vault3-data:
+    name: demo_vault3-data
+  video-data:
+    name: demo_video-data
+  web1-logs:
+    name: demo_web1-logs
+  web2-logs:
+    name: demo_web2-logs
+  xrdp-data:
+    name: demo_xrdp-data

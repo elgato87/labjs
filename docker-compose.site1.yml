@@ -1,0 +1,365 @@
+version: "3.9"
+
+services:
+  # ------------------------- Vault RAFT cluster site1 -------------------------
+  vault1_site1:
+    image: hashicorp/vault:1.17
+    container_name: vault1_site1
+    restart: unless-stopped
+    user: "0"
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - ./vault/site1/vault1.hcl:/vault/config/vault.hcl:ro
+      - vault1-site1-data:/vault/data
+    ports:
+      - "8200:8200"
+
+  vault2_site1:
+    image: hashicorp/vault:1.17
+    container_name: vault2_site1
+    restart: unless-stopped
+    user: "0"
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - ./vault/site1/vault2.hcl:/vault/config/vault.hcl:ro
+      - vault2-site1-data:/vault/data
+    ports:
+      - "8210:8200"
+
+  vault3_site1:
+    image: hashicorp/vault:1.17
+    container_name: vault3_site1
+    restart: unless-stopped
+    user: "0"
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - ./vault/site1/vault3.hcl:/vault/config/vault.hcl:ro
+      - vault3-site1-data:/vault/data
+    ports:
+      - "8220:8200"
+
+  # ------------------------- Shared data services site1 -------------------------
+  postgresql_site1:
+    image: postgres:16.10-bookworm
+    container_name: jms_postgresql_site1
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jumpserver
+      POSTGRES_USER: jumpserver
+      POSTGRES_PASSWORD: ${DB_PASSWORD_SITE1:-change-me}
+    volumes:
+      - pgdata-site1:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_master_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server /etc/redis.conf --requirepass \"${REDIS_PASSWORD_SITE1:-change-me}\""]
+    volumes:
+      - redis-master-data-site1:/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/redis/redis.conf:/etc/redis.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD_SITE1:-change-me}\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_replica1_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_replica1_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server /etc/redis.conf --requirepass \"${REDIS_PASSWORD_SITE1:-change-me}\" --replicaof redis_site1 6379 --masterauth \"${REDIS_PASSWORD_SITE1:-change-me}\""]
+    volumes:
+      - redis-replica1-data-site1:/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/redis/redis.conf:/etc/redis.conf:ro
+    depends_on:
+      - redis_site1
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD_SITE1:-change-me}\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_replica2_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_replica2_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server /etc/redis.conf --requirepass \"${REDIS_PASSWORD_SITE1:-change-me}\" --replicaof redis_site1 6379 --masterauth \"${REDIS_PASSWORD_SITE1:-change-me}\""]
+    volumes:
+      - redis-replica2-data-site1:/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/redis/redis.conf:/etc/redis.conf:ro
+    depends_on:
+      - redis_site1
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD_SITE1:-change-me}\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_sentinel1_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_sentinel1_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "printf 'port 26379\\nsentinel monitor mymaster redis_site1 6379 2\\nsentinel auth-pass mymaster \"${REDIS_PASSWORD_SITE1:-change-me}\"\\nsentinel down-after-milliseconds mymaster 5000\\nsentinel parallel-syncs mymaster 1\\nsentinel failover-timeout mymaster 10000\\ndir /tmp\\n' > /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"]
+    depends_on:
+      - redis_site1
+      - redis_replica1_site1
+      - redis_replica2_site1
+    ports:
+      - "26379:26379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 26379 ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_sentinel2_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_sentinel2_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "printf 'port 26380\\nsentinel monitor mymaster redis_site1 6379 2\\nsentinel auth-pass mymaster \"${REDIS_PASSWORD_SITE1:-change-me}\"\\nsentinel down-after-milliseconds mymaster 5000\\nsentinel parallel-syncs mymaster 1\\nsentinel failover-timeout mymaster 10000\\ndir /tmp\\n' > /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"]
+    depends_on:
+      - redis_site1
+      - redis_replica1_site1
+      - redis_replica2_site1
+    ports:
+      - "26380:26380"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 26380 ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis_sentinel3_site1:
+    image: redis:7.4.6-bookworm
+    container_name: jms_redis_sentinel3_site1
+    restart: unless-stopped
+    command: ["sh", "-c", "printf 'port 26381\\nsentinel monitor mymaster redis_site1 6379 2\\nsentinel auth-pass mymaster \"${REDIS_PASSWORD_SITE1:-change-me}\"\\nsentinel down-after-milliseconds mymaster 5000\\nsentinel parallel-syncs mymaster 1\\nsentinel failover-timeout mymaster 10000\\ndir /tmp\\n' > /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"]
+    depends_on:
+      - redis_site1
+      - redis_replica1_site1
+      - redis_replica2_site1
+    ports:
+      - "26381:26381"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 26381 ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # ------------------------- JumpServer app site1 -------------------------
+  core_site1:
+    image: jumpserver/core:v4.10.17-ee
+    container_name: jms_core_site1
+    restart: unless-stopped
+    privileged: true
+    command: ["start", "web"]
+    env_file:
+      - .env.site1
+    volumes:
+      - core-data-site1:/opt/jumpserver/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/jumpserver/data/certs:ro
+    depends_on:
+      - postgresql_site1
+      - redis_site1
+      - vault1_site1
+      - vault2_site1
+      - vault3_site1
+
+  celery_site1:
+    image: jumpserver/core:v4.10.17-ee
+    container_name: jms_celery_site1
+    restart: unless-stopped
+    privileged: true
+    command: ["start", "task"]
+    env_file:
+      - .env.site1
+    volumes:
+      - core-data-site1:/opt/jumpserver/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/jumpserver/data/certs:ro
+    depends_on:
+      - core_site1
+      - postgresql_site1
+      - redis_site1
+
+  web1_site1:
+    image: jumpserver/web:v4.10.17-ee
+    container_name: jms_web1_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    environment:
+      HTTP_PORT: 80
+      USE_LB: "1"
+      GZIP: on
+      CLIENT_MAX_BODY_SIZE: 4096m
+    volumes:
+      - core-data-site1:/opt/jumpserver/data
+      - web1-logs-site1:/var/log/nginx
+      - /sys/fs/bpf:/sys/fs/bpf
+    depends_on:
+      - core_site1
+      - postgresql_site1
+      - redis_site1
+
+  web2_site1:
+    image: jumpserver/web:v4.10.17-ee
+    container_name: jms_web2_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    environment:
+      HTTP_PORT: 80
+      USE_LB: "1"
+      GZIP: on
+      CLIENT_MAX_BODY_SIZE: 4096m
+    volumes:
+      - core-data-site1:/opt/jumpserver/data
+      - web2-logs-site1:/var/log/nginx
+      - /sys/fs/bpf:/sys/fs/bpf
+    depends_on:
+      - core_site1
+      - postgresql_site1
+      - redis_site1
+
+  nginx_site1:
+    image: nginx:1.27-alpine
+    container_name: jms_lb_site1
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/ee-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web1_site1
+      - web2_site1
+
+  koko_site1:
+    image: jumpserver/koko:v4.10.17-ee
+    container_name: jms_koko_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    volumes:
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/koko/data/certs:ro
+      - koko-data-site1:/opt/koko/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  lion_site1:
+    image: jumpserver/lion:v4.10.17-ee
+    container_name: jms_lion_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    volumes:
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/lion/data/certs:ro
+      - lion-data-site1:/opt/lion/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  chen_site1:
+    image: jumpserver/chen:v4.10.17-ee
+    container_name: jms_chen_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    volumes:
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/chen/data/certs:ro
+      - chen-data-site1:/opt/chen/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  razor_site1:
+    image: jumpserver/razor:v4.10.17-ee
+    container_name: jms_razor_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    ports:
+      - "3389:3389"
+    volumes:
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/nginx/cert:/opt/razor/cert:ro
+      - razor-data-site1:/opt/razor/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  xrdp_site1:
+    image: jumpserver/xrdp:v4.10.17-ee
+    container_name: jms_xrdp_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    ports:
+      - "3390:3390"
+    volumes:
+      - xrdp-data-site1:/opt/xrdp/data
+      - ./jumpserver-ee-v4.10.17-x86_64/config_init/nginx/cert:/opt/xrdp/cert:ro
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  panda_site1:
+    image: jumpserver/panda:v4.10.17-ee
+    container_name: jms_panda_site1
+    restart: unless-stopped
+    env_file:
+      - .env.site1
+    volumes:
+      - panda-data-site1:/opt/panda/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+  video_site1:
+    image: jumpserver/video-worker:v4.10.17-ee
+    container_name: jms_video_site1
+    restart: unless-stopped
+    cpus: 2
+    env_file:
+      - .env.site1
+    volumes:
+      - video-data-site1:/opt/video-worker/data
+    depends_on:
+      - core_site1
+      - redis_site1
+
+volumes:
+  pgdata-site1:
+  redis-master-data-site1:
+  redis-replica1-data-site1:
+  redis-replica2-data-site1:
+  core-data-site1:
+  web1-logs-site1:
+  web2-logs-site1:
+  koko-data-site1:
+  lion-data-site1:
+  chen-data-site1:
+  razor-data-site1:
+  xrdp-data-site1:
+  panda-data-site1:
+  video-data-site1:
+  vault1-site1-data:
+  vault2-site1-data:
+  vault3-site1-data:
