@@ -305,13 +305,7 @@ services:
       - jumpserver-net
 
   video:
-    image: jumpserver/video-worker:v4.10.17-ee    sudo nmcli connection modify "CONEXION" \
-      ipv4.method manual \
-      ipv4.addresses 192.168.0.211/24 \
-      ipv4.gateway 192.168.0.1 \
-      ipv4.dns "8.8.8.8 1.1.1.1" \
-      ipv4.ignore-auto-dns yes
-    sudo nmcli connection up "CONEXION"
+    image: jumpserver/video-worker:v4.10.17-ee
     container_name: jms_video
     restart: unless-stopped
     pull_policy: never
