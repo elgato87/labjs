@@ -1,105 +1,6 @@
 version: "3.9"
 
 services:
-  # ------------------------- Vault Raft HA -------------------------
-  vault1:
-    image: hashicorp/vault:1.17
-    container_name: vault1
-    restart: unless-stopped
-    pull_policy: never
-    user: "0"
-    cap_add:
-      - IPC_LOCK
-    command: ["/bin/sh", "-c", "chown -R 100:1000 /vault/data && exec vault server -config=/vault/config/vault.hcl"]
-    environment:
-      VAULT_ADDR: http://127.0.0.1:8200
-    volumes:
-      - ./vault/vault1.hcl:/vault/config/vault.hcl:ro
-      - vault1-data:/vault/data
-    ports:
-      - "8200:8200"
-    networks:
-      - jumpserver-net
-
-  vault2:
-    image: hashicorp/vault:1.17
-    container_name: vault2
-    restart: unless-stopped
-    pull_policy: never
-    user: "0"
-    cap_add:
-      - IPC_LOCK
-    command: ["/bin/sh", "-c", "chown -R 100:1000 /vault/data && exec vault server -config=/vault/config/vault.hcl"]
-    environment:
-      VAULT_ADDR: http://127.0.0.1:8200
-    volumes:
-      - ./vault/vault2.hcl:/vault/config/vault.hcl:ro
-      - vault2-data:/vault/data
-    ports:
-      - "8210:8200"
-    networks:
-      - jumpserver-net
-
-  vault3:
-    image: hashicorp/vault:1.17
-    container_name: vault3
-    restart: unless-stopped
-    pull_policy: never
-    user: "0"
-    cap_add:
-      - IPC_LOCK
-    command: ["/bin/sh", "-c", "chown -R 100:1000 /vault/data && exec vault server -config=/vault/config/vault.hcl"]
-    environment:
-      VAULT_ADDR: http://127.0.0.1:8200
-    volumes:
-      - ./vault/vault3.hcl:/vault/config/vault.hcl:ro
-      - vault3-data:/vault/data
-    ports:
-      - "8220:8200"
-    networks:
-      - jumpserver-net
-
-  # ------------------------- Shared infrastructure -------------------------
-  postgresql:
-    image: postgres:16.10-bookworm
-    container_name: jms_postgresql
-    restart: unless-stopped
-    pull_policy: never
-    env_file:
-      - .env.ee
-    environment:
-      POSTGRES_DB: ${DB_NAME:-jumpserver}
-      POSTGRES_USER: ${DB_USER:-jumpserver}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-    networks:
-      - jumpserver-net
-
-  redis:
-    image: redis:7.4.6-bookworm
-    container_name: jms_redis
-    restart: unless-stopped
-    pull_policy: never
-    env_file:
-      - .env.ee
-    command: ["sh", "-c", "redis-server /etc/redis.conf --requirepass \"$REDIS_PASSWORD\""]
-    volumes:
-      - redisdata:/data
-      - ./jumpserver-ee-v4.10.17-x86_64/config_init/redis/redis.conf:/etc/redis.conf:ro
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-    networks:
-      - jumpserver-net
-
   # ------------------------- JumpServer EE application services -------------------------
   core:
     image: jumpserver/core:v4.10.17-ee
@@ -113,12 +14,6 @@ services:
     volumes:
       - core-data:/opt/jumpserver/data
       - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/jumpserver/data/certs:ro
-    depends_on:
-      - postgresql
-      - redis
-      - vault1
-      - vault2
-      - vault3
     networks:
       - jumpserver-net
 
@@ -136,8 +31,6 @@ services:
       - ./jumpserver-ee-v4.10.17-x86_64/config_init/certs:/opt/jumpserver/data/certs:ro
     depends_on:
       - core
-      - postgresql
-      - redis
     networks:
       - jumpserver-net
 
@@ -159,8 +52,6 @@ services:
       - /sys/fs/bpf:/sys/fs/bpf
     depends_on:
       - core
-      - postgresql
-      - redis
     networks:
       - jumpserver-net
 
@@ -182,8 +73,6 @@ services:
       - /sys/fs/bpf:/sys/fs/bpf
     depends_on:
       - core
-      - postgresql
-      - redis
     networks:
       - jumpserver-net
 
@@ -217,7 +106,6 @@ services:
       - koko-data:/opt/koko/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -233,7 +121,6 @@ services:
       - lion-data:/opt/lion/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -249,7 +136,6 @@ services:
       - chen-data:/opt/chen/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -267,7 +153,6 @@ services:
       - razor-data:/opt/razor/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -285,7 +170,6 @@ services:
       - ./jumpserver-ee-v4.10.17-x86_64/config_init/nginx/cert:/opt/xrdp/cert:ro
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -300,7 +184,6 @@ services:
       - panda-data:/opt/panda/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
@@ -316,13 +199,10 @@ services:
       - video-data:/opt/video-worker/data
     depends_on:
       - core
-      - redis
     networks:
       - jumpserver-net
 
 volumes:
-  pgdata:
-  redisdata:
   core-data:
   web1-logs:
   web2-logs:
@@ -333,9 +213,6 @@ volumes:
   xrdp-data:
   panda-data:
   video-data:
-  vault1-data:
-  vault2-data:
-  vault3-data:
 
 networks:
   jumpserver-net:

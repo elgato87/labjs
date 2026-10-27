@@ -1,6 +1,7 @@
 # Environment files and secrets
 .env*
 !.env.example
+!.env.ee.example
 
 # Vault initialization output and JumpServer token
 vault-init.json
