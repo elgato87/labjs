@@ -50,6 +50,7 @@ services:
       - core-data:/opt/jumpserver/data
       - web1-logs:/var/log/nginx
       - /sys/fs/bpf:/sys/fs/bpf
+      - ./nginx/web-nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - core
     networks:
@@ -71,6 +72,7 @@ services:
       - core-data:/opt/jumpserver/data
       - web2-logs:/var/log/nginx
       - /sys/fs/bpf:/sys/fs/bpf
+      - ./nginx/web-nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - core
     networks:
