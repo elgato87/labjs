@@ -75,16 +75,16 @@ echo -e "\n${YELLOW}>>> [5/7] Verificando y etiquetando imágenes en Podman...${
 # Re-etiquetar si las imágenes vienen con el prefijo gabrielpose/labjs
 COMPONENTS=(core web koko lion chen razor xrdp panda video-worker)
 for comp in "${COMPONENTS[@]}"; do
-  if podman image exists "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" && ! podman image exists "jumpserver/${comp}:v4.10.17-ee"; then
-    echo "Etiquetando jumpserver/${comp}:v4.10.17-ee..."
-    podman tag "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" "jumpserver/${comp}:v4.10.17-ee"
+  if podman image exists "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" && ! podman image exists "docker.io/jumpserver/${comp}:v4.10.17-ee"; then
+    echo "Etiquetando docker.io/jumpserver/${comp}:v4.10.17-ee..."
+    podman tag "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" "docker.io/jumpserver/${comp}:v4.10.17-ee"
   fi
 done
 
 # Descargar Nginx si falta
-if ! podman image exists "nginx:1.27-alpine"; then
+if ! podman image exists "docker.io/nginx:1.27-alpine"; then
   echo "Descargando imagen del balanceador Nginx..."
-  podman pull nginx:1.27-alpine
+  podman pull docker.io/nginx:1.27-alpine
 fi
 
 # 7. Configuración de variables (.env.ee)
@@ -107,9 +107,9 @@ fi
 # 8. Generar configuración persistente de Nginx con DNS de Podman (192.168.250.1)
 echo -e "\n${YELLOW}>>> [7/7] Preparando archivo de resolución DNS para Nginx...${NC}"
 if [ ! -f ./nginx/web-nginx.conf ]; then
-  # Si jms_web1 ya existe, lo extraemos; si no, creamos un contenedor temporal rápido para copiar el original
-  echo "Extrayendo plantilla base de nginx.conf de jumpserver/web..."
-  temp_id=$(podman create jumpserver/web:v4.10.17-ee)
+  # Usar el nombre completo con registry para evitar el error de short-name resolution en RHEL 9
+  echo "Extrayendo plantilla base de nginx.conf de docker.io/jumpserver/web..."
+  temp_id=$(podman create docker.io/jumpserver/web:v4.10.17-ee)
   podman cp "${temp_id}:/etc/nginx/nginx.conf" ./nginx/web-nginx.conf
   podman rm "${temp_id}" >/dev/null
   # Reemplazar 127.0.0.11 por la IP real del gateway DNS de Podman
@@ -134,3 +134,4 @@ echo -e "Contraseña:  admin (te pedirá cambiarla en el primer ingreso)"
 echo -e "\nPara ver los logs del backend:"
 echo -e "  sudo podman logs -f jms_core"
 echo -e "=====================================================================\n"
+
