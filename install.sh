@@ -75,14 +75,15 @@ echo -e "\n${YELLOW}>>> [5/7] Verificando y etiquetando imágenes en Podman...${
 # Re-etiquetar si las imágenes vienen con el prefijo gabrielpose/labjs
 COMPONENTS=(core web koko lion chen razor xrdp panda video-worker)
 for comp in "${COMPONENTS[@]}"; do
-  if podman image exists "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" && ! podman image exists "docker.io/jumpserver/${comp}:v4.10.17-ee"; then
-    echo "Etiquetando docker.io/jumpserver/${comp}:v4.10.17-ee..."
-    podman tag "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" "docker.io/jumpserver/${comp}:v4.10.17-ee"
+  if podman image exists "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee"; then
+    echo "Etiquetando ${comp} para Podman..."
+    podman tag "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" "docker.io/jumpserver/${comp}:v4.10.17-ee" 2>/dev/null || true
+    podman tag "docker.io/gabrielpose/labjs:${comp}-v4.10.17-ee" "localhost/jumpserver/${comp}:v4.10.17-ee" 2>/dev/null || true
   fi
 done
 
 # Descargar Nginx si falta
-if ! podman image exists "docker.io/nginx:1.27-alpine"; then
+if ! podman image exists "docker.io/nginx:1.27-alpine" && ! podman image exists "nginx:1.27-alpine"; then
   echo "Descargando imagen del balanceador Nginx..."
   podman pull docker.io/nginx:1.27-alpine
 fi
@@ -107,9 +108,21 @@ fi
 # 8. Generar configuración persistente de Nginx con DNS de Podman (192.168.250.1)
 echo -e "\n${YELLOW}>>> [7/7] Preparando archivo de resolución DNS para Nginx...${NC}"
 if [ ! -f ./nginx/web-nginx.conf ]; then
-  # Usar el nombre completo con registry para evitar el error de short-name resolution en RHEL 9
-  echo "Extrayendo plantilla base de nginx.conf de docker.io/jumpserver/web..."
-  temp_id=$(podman create docker.io/jumpserver/web:v4.10.17-ee)
+  WEB_IMG=""
+  for img in "docker.io/jumpserver/web:v4.10.17-ee" "localhost/jumpserver/web:v4.10.17-ee" "docker.io/gabrielpose/labjs:web-v4.10.17-ee"; do
+    if podman image exists "$img"; then
+      WEB_IMG="$img"
+      break
+    fi
+  done
+
+  if [ -z "$WEB_IMG" ]; then
+    echo -e "${RED}[ERROR] No se encontró ninguna imagen de JumpServer Web localmente.${NC}"
+    exit 1
+  fi
+
+  echo "Extrayendo plantilla base de nginx.conf desde ${WEB_IMG}..."
+  temp_id=$(podman create "${WEB_IMG}")
   podman cp "${temp_id}:/etc/nginx/nginx.conf" ./nginx/web-nginx.conf
   podman rm "${temp_id}" >/dev/null
   # Reemplazar 127.0.0.11 por la IP real del gateway DNS de Podman
